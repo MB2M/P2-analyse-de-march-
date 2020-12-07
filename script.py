@@ -1,4 +1,3 @@
-import csv
 import requests
 import nums_from_string
 from bs4 import BeautifulSoup
@@ -22,7 +21,7 @@ for category in categoriesList:
     if pagination != None:
         TotalPages = pagination.li.text.strip().replace('Page 1 of ', '')
 
-    with open(category['name'] + '.csv', 'w', newline='', encoding="utf-8") as csvfile:
+    with open(csv/category['name'] + '.csv', 'w', newline='', encoding="utf-8") as csvfile:
         csvfile.write('product_page_url,universal_product_code,title,price_including_tax,price_excluding_tax,'
                       'number_available,product_description,category,review_rating,image_url\n')
 
@@ -56,5 +55,4 @@ for category in categoriesList:
                 bookCategory = soup.find('li', class_='active').find_previous_sibling('li').a.text
                 bookRating = soup.find('p', class_='star-rating')['class'][1]
                 bookImageUrl = urlRoot + soup.find('div', class_="item active").img['src'].replace('../', "")
-                #print(url + "," + bookUPC + "," + bookTitle + "," + bookTTC + "," + bookHT + "," + str(bookStock) + "," + bookDescription + "," + bookCategory + "," + bookRating + "," + bookImageUrl)
                 csvfile.write(url + "," + bookUPC + "," + bookTitle + "," + bookTTC + "," + bookHT + "," + str(bookStock) + "," + bookDescription + "," + bookCategory + "," + bookRating + "," + bookImageUrl + '\n')
