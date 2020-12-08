@@ -36,9 +36,17 @@ def get_book_informations(url):
     books.append(soup.find('li', class_='active').find_previous_sibling('li').a.text)
     books.append(soup.find('p', class_='star-rating')['class'][1])
     books.append(urlRoot + soup.find('div', class_="item active").img['src'].replace('../', ""))
-
-
     return books
+
+
+def get_total_pages(url):
+    soup = get_soup(url)
+    pagination = soup.find('ul', class_='pager')
+    if pagination is not None:
+        total_pages = int(pagination.li.text.strip().replace('Page 1 of ', ''))
+    else:
+        total_pages = 1
+    return total_pages
 
 
 def add_list_to_csv(file, book_list, separator=","):
@@ -49,28 +57,23 @@ def add_list_to_csv(file, book_list, separator=","):
     file.write(row)
 
 
-def extract_category_to_csv(url_category, name="default"):
-    count = 1
-    soup = get_soup(url_category)
-    total_pages = "1"
-    pagination = soup.find('ul', class_='pager')
-    if pagination is not None:
-        total_pages = pagination.li.text.strip().replace('Page 1 of ', '')
+def extract_book_to_csv(url, count=1):
+    book_information = get_book_informations(url)
+    add_list_to_csv(csvfile, book_information, "|")
+    save_img(book_information[-1], 'img/' + slugify(book_information[2] + "_" + str(count), separator='_') + '.jpg')
 
-    with open('csv/' + name + '.csv', 'w', newline='', encoding="utf-8") as csvfile:
-        csvfile.write('product_page_url|universal_product_code|title|price_including_tax|price_excluding_tax|'
-                      'number_available|product_description|category|review_rating|image_url\n')
-        for i in range(int(total_pages)):
+
+def extract_category_to_csv(url_category):
+        count = 1
+        total_pages = get_total_pages(url_category)
+        for i in range(total_pages):
             url = url_category
             if i != 0:
                 url = url.replace('index.html', 'page-' + str(i + 1) + '.html')
             soup = get_soup(url)
-
             for article in soup.ol.find_all('article'):
                 url_book = urlRoot + 'catalogue/' + article.div.a['href'].replace('../', '')
-                book_information = get_book_informations(url_book)
-                add_list_to_csv(csvfile, book_information, "|")
-                save_img(book_information[-1], 'img/' + slugify(book_information[2] + "_" + str(count), separator='_') + '.jpg')
+                extract_book_to_csv(url_book, count)
                 count += 1
 
 
@@ -82,4 +85,8 @@ urlRoot = 'http://books.toscrape.com/'
 categories = get_categories(urlRoot)
 
 for category in categories:
-    extract_category_to_csv(category['link'], name=category["name"])
+    with open('csv/' + category['name'] + '.csv', 'w', newline='', encoding="utf-8") as csvfile:
+        csvfile.write('product_page_url|universal_product_code|title|price_including_tax|price_excluding_tax|'
+                      'number_available|product_description|category|review_rating|image_url\n')
+        extract_category_to_csv(category['link'])
+
